@@ -34,9 +34,14 @@ export default function Recorder({
   const [saving, setSaving] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
+  const [liveText, setLiveText] = useState("");
+
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Reconnaissance vocale intégrée au navigateur (démo, données fictives).
+  const recognitionRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const transcriptRef = useRef<string>("");
 
   // Charge l'audio existant (mode "relire et valider")
   useEffect(() => {
@@ -55,6 +60,35 @@ export default function Recorder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function startSpeechRecognition() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return; // navigateur sans reconnaissance vocale -> saisie manuelle
+    transcriptRef.current = "";
+    setLiveText("");
+    const recog = new SR();
+    recog.lang = "fr-FR";
+    recog.continuous = true;
+    recog.interimResults = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recog.onresult = (e: any) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const res = e.results[i];
+        if (res.isFinal) transcriptRef.current += res[0].transcript;
+        else interim += res[0].transcript;
+      }
+      setLiveText((transcriptRef.current + " " + interim).trim());
+    };
+    recog.onerror = () => {};
+    recognitionRef.current = recog;
+    try {
+      recog.start();
+    } catch {
+      /* déjà démarrée */
+    }
+  }
+
   async function startRecording() {
     setError(null);
     try {
@@ -69,6 +103,7 @@ export default function Recorder({
       };
       rec.start();
       mediaRef.current = rec;
+      startSpeechRecognition();
       setPhase("recording");
       setElapsed(0);
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
@@ -79,6 +114,11 @@ export default function Recorder({
 
   function stopRecording() {
     if (timerRef.current) clearInterval(timerRef.current);
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      /* ignore */
+    }
     mediaRef.current?.stop();
     setPhase("processing");
   }
@@ -110,13 +150,21 @@ export default function Recorder({
         .upload(path, blob, { contentType: "audio/webm", upsert: true });
       if (upErr) throw new Error(upErr.message);
 
-      // 3. Transcrire
-      const form = new FormData();
-      form.append("audio", blob, "passage.webm");
-      const res = await fetch("/api/transcribe", { method: "POST", body: form });
-      const tr = await res.json();
-      const raw: string = tr.text ?? "";
-      if (tr.note) setNote(tr.note);
+      // 3. Transcription : d'abord le texte reconnu par le navigateur (démo).
+      let raw = transcriptRef.current.trim();
+      if (!raw) {
+        // Repli : moteur serveur (OpenAI Whisper) si une clé est configurée.
+        const form = new FormData();
+        form.append("audio", blob, "passage.webm");
+        const res = await fetch("/api/transcribe", { method: "POST", body: form });
+        const tr = await res.json();
+        raw = tr.text ?? "";
+        setNote(
+          raw
+            ? null
+            : "Dictée non captée. Vérifiez le micro / la langue du navigateur, ou saisissez le texte à la main."
+        );
+      }
 
       // 4. Enregistrer chemin audio + transcription brute
       await supabase
@@ -205,6 +253,11 @@ export default function Recorder({
             {String(elapsed % 60).padStart(2, "0")}
           </p>
           <p className="text-sm text-slate-500">Enregistrement… touchez pour arrêter</p>
+          {liveText && (
+            <p className="mt-2 w-full rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+              {liveText}
+            </p>
+          )}
         </div>
       )}
 
