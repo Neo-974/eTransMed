@@ -39,8 +39,9 @@ export async function middleware(request: NextRequest) {
   if (!user && !isAuthRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  // Connecté sur une page d'auth -> app
-  if (user && isAuthRoute) {
+  // Connecté sur /login -> app. On NE redirige PAS depuis /register : un utilisateur
+  // connecté sans cabinet doit pouvoir y accéder pour en créer un (sinon boucle).
+  if (user && path === "/login") {
     return NextResponse.redirect(new URL("/patients", request.url));
   }
 
