@@ -35,6 +35,35 @@ returns uuid
 language sql stable security definer set search_path = public
 as $$ select cabinet_id from public.profiles where id = auth.uid() $$;
 
+-- Inscription : crée le cabinet + le profil du titulaire en une transaction.
+-- SECURITY DEFINER = contourne la RLS (le profil n'existe pas encore à cet instant).
+create or replace function public.create_cabinet_and_join(cabinet_nom text, membre_nom text)
+returns uuid
+language plpgsql security definer set search_path = public
+as $$
+declare
+  new_cabinet_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Utilisateur non authentifié';
+  end if;
+
+  insert into public.cabinets (nom) values (cabinet_nom)
+  returning id into new_cabinet_id;
+
+  insert into public.profiles (id, cabinet_id, nom_complet, role)
+  values (auth.uid(), new_cabinet_id, membre_nom, 'titulaire')
+  on conflict (id) do update
+    set cabinet_id = excluded.cabinet_id,
+        nom_complet = excluded.nom_complet,
+        role = excluded.role;
+
+  return new_cabinet_id;
+end;
+$$;
+
+grant execute on function public.create_cabinet_and_join(text, text) to authenticated;
+
 -- ============================================================
 --  Patients (patientèle du cabinet)
 -- ============================================================

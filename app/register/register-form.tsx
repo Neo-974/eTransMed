@@ -34,27 +34,15 @@ export default function RegisterForm() {
       return;
     }
 
-    // Crée le cabinet puis le profil rattaché (titulaire).
-    const { data: cab, error: cabErr } = await supabase
-      .from("cabinets")
-      .insert({ nom: cabinet })
-      .select()
-      .single();
-    if (cabErr || !cab) {
-      setLoading(false);
-      setError(cabErr?.message ?? "Création du cabinet impossible");
-      return;
-    }
-
-    const { error: profErr } = await supabase.from("profiles").insert({
-      id: signUp.user!.id,
-      cabinet_id: cab.id,
-      nom_complet: nom,
-      role: "titulaire",
+    // Crée le cabinet + le profil rattaché via une fonction SECURITY DEFINER.
+    // Évite le blocage RLS de l'inscription (le profil n'existe pas encore à cet instant).
+    const { error: rpcErr } = await supabase.rpc("create_cabinet_and_join", {
+      cabinet_nom: cabinet,
+      membre_nom: nom,
     });
     setLoading(false);
-    if (profErr) {
-      setError(profErr.message);
+    if (rpcErr) {
+      setError(rpcErr.message);
       return;
     }
 
