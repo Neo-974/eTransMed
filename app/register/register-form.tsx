@@ -20,13 +20,23 @@ export default function RegisterForm() {
     setError(null);
     setLoading(true);
 
-    const { data: signUp, error: signErr } = await supabase.auth.signUp({ email, password });
+    let { data: auth, error: signErr } = await supabase.auth.signUp({ email, password });
+
+    // Compte déjà créé lors d'une tentative précédente (sans cabinet) : on se connecte.
     if (signErr) {
-      setLoading(false);
-      setError(signErr.message);
-      return;
+      const { data: signIn, error: inErr } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (inErr) {
+        setLoading(false);
+        setError(inErr.message);
+        return;
+      }
+      auth = signIn;
     }
-    if (!signUp.session) {
+
+    if (!auth.session) {
       setLoading(false);
       setError(
         "Confirmation email requise. Pour la version test, désactivez « Confirm email » dans Supabase (Authentication → Providers → Email)."
