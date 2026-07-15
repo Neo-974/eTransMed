@@ -231,9 +231,14 @@ export default function Recorder({
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={8}
-            placeholder="Texte de la transmission… (corrigez avant de valider)"
+            autoFocus={!text}
+            placeholder="Dictez avec le micro 🎤 de votre clavier, ou tapez le texte…"
             className="w-full rounded-lg border border-slate-300 p-3 text-sm"
           />
+          <p className="text-xs text-slate-500">
+            💡 Astuce : touchez le <b>micro 🎤 de votre clavier</b> pour dicter le texte
+            (gratuit, transcription du téléphone).
+          </p>
           <p className="text-xs text-amber-700">
             ⚠️ Vérifiez soigneusement les posologies et les chiffres avant de valider.
           </p>
