@@ -179,9 +179,11 @@ export default function Recorder({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Dictée</h1>
-        <p className="text-sm text-slate-500">{patientName}</p>
+      <div className="rounded-lg border border-brand bg-teal-50 px-4 py-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-dark">
+          Dictée · patient sélectionné
+        </p>
+        <p className="text-xl font-bold leading-tight text-slate-900">{patientName}</p>
       </div>
 
       {phase === "idle" && (

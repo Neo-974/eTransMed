@@ -40,10 +40,15 @@ export default async function PatientPage({ params }: { params: { id: string } }
     <div className="space-y-5">
       <div>
         <Link href="/patients" className="text-sm text-slate-400">← Patients</Link>
-        <h1 className="mt-1 text-lg font-semibold">
-          {patient.nom.toUpperCase()} {patient.prenom}
-        </h1>
-        <p className="text-xs text-slate-400">Né(e) le {patient.date_naissance ?? "—"}</p>
+        <div className="mt-1 rounded-lg border border-brand bg-teal-50 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-dark">
+            Patient
+          </p>
+          <h1 className="text-xl font-bold leading-tight text-slate-900">
+            {patient.nom.toUpperCase()} {patient.prenom}
+          </h1>
+          <p className="text-xs text-slate-500">Né(e) le {patient.date_naissance ?? "—"}</p>
+        </div>
       </div>
 
       <Link
