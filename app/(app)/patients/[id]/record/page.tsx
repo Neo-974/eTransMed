@@ -22,7 +22,7 @@ export default async function RecordPage({
   if (searchParams.passage) {
     const { data } = await supabase
       .from("passages")
-      .select("id, transcript_raw, transcript_corrige, audio_path")
+      .select("id, transcript_raw, transcript_corrige")
       .eq("id", searchParams.passage)
       .maybeSingle();
     existing = data;

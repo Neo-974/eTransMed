@@ -55,7 +55,7 @@ export default async function PatientPage({ params }: { params: { id: string } }
         href={`/patients/${patient.id}/record`}
         className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand py-3 font-medium text-white"
       >
-        🎙️ Nouvelle dictée
+        ✍️ Nouvelle dictée
       </Link>
 
       <section>
