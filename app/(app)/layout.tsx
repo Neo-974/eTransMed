@@ -25,7 +25,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="mx-auto min-h-screen max-w-md bg-white shadow-sm">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-4 py-3">
-        <Link href="/patients" className="font-bold text-brand-dark">eTransMed</Link>
+        <Link href="/accueil" className="flex items-center gap-2 font-bold text-brand-dark" aria-label="Accueil">
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand text-sm text-white">🏠</span>
+          eTransMed
+        </Link>
         <div className="flex items-center gap-3 text-sm">
           <span className="text-slate-500">{cabinetNom}</span>
           <SignOutButton />
@@ -37,6 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
 
       <nav className="flex border-b text-sm">
+        <Link href="/accueil" className="flex-1 py-2 text-center hover:bg-slate-50">Accueil</Link>
         <Link href="/patients" className="flex-1 py-2 text-center hover:bg-slate-50">Patients</Link>
         <Link href="/transmissions" className="flex-1 py-2 text-center hover:bg-slate-50">Transmissions</Link>
       </nav>

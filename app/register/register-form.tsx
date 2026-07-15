@@ -56,7 +56,7 @@ export default function RegisterForm() {
       return;
     }
 
-    router.push("/patients");
+    router.push("/accueil");
     router.refresh();
   }
 

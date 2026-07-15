@@ -9,7 +9,30 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default async function PatientPage({ params }: { params: { id: string } }) {
+function firstOrSelf<T>(v: T | T[] | null | undefined): T | null {
+  if (!v) return null;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
+}
+
+const PERIODS = [
+  { key: "48h", label: "48 h", days: 2 },
+  { key: "7j", label: "1 semaine", days: 7 },
+  { key: "all", label: "Tout", days: null },
+] as const;
+
+const MOMENT_LABEL: Record<string, string> = {
+  matin: "Matin",
+  apres_midi: "Après-midi",
+  soir: "Soir",
+};
+
+export default async function PatientPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { tp?: string };
+}) {
   const supabase = createClient();
 
   const { data: patient } = await supabase
@@ -34,6 +57,27 @@ export default async function PatientPage({ params }: { params: { id: string } }
     .eq("date_soin", todayISO())
     .maybeSingle();
 
+  // Tournées auxquelles appartient le patient
+  const { data: tournees } = await supabase
+    .from("tournee_patients")
+    .select("moment, tournees(nom)")
+    .eq("patient_id", params.id);
+
+  // Historique des transmissions validées, filtrable par période
+  const active = PERIODS.find((p) => p.key === searchParams.tp) ?? PERIODS[0];
+  let histQuery = supabase
+    .from("transmissions")
+    .select("id, date_soin, texte")
+    .eq("patient_id", params.id)
+    .eq("statut", "validee")
+    .order("date_soin", { ascending: false });
+  if (active.days !== null) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - active.days);
+    histQuery = histQuery.gte("date_soin", cutoff.toISOString().slice(0, 10));
+  }
+  const { data: historique } = await histQuery;
+
   const validatedPassages = (passages ?? []).filter((p) => p.statut === "valide");
 
   return (
@@ -48,6 +92,21 @@ export default async function PatientPage({ params }: { params: { id: string } }
             {patient.nom.toUpperCase()} {patient.prenom}
           </h1>
           <p className="text-xs text-slate-500">Né(e) le {patient.date_naissance ?? "—"}</p>
+          {(tournees ?? []).length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {(tournees ?? []).map((t, i) => {
+                const nom = firstOrSelf<{ nom: string }>(t.tournees)?.nom ?? "Tournée";
+                return (
+                  <span
+                    key={i}
+                    className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-brand-dark ring-1 ring-brand/30"
+                  >
+                    {nom} · {MOMENT_LABEL[t.moment as string] ?? t.moment}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -108,6 +167,41 @@ export default async function PatientPage({ params }: { params: { id: string } }
         transmission={transmission}
         validatedCount={validatedPassages.length}
       />
+
+      {/* Historique des transmissions (toutes tournées confondues) */}
+      <section>
+        <h2 className="mb-2 text-sm font-semibold text-slate-600">Transmissions</h2>
+        <div className="mb-3 flex gap-2">
+          {PERIODS.map((p) => (
+            <Link
+              key={p.key}
+              href={`/patients/${patient.id}?tp=${p.key}`}
+              className={
+                p.key === active.key
+                  ? "rounded-full bg-brand px-3 py-1 text-xs font-medium text-white"
+                  : "rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50"
+              }
+            >
+              {p.label}
+            </Link>
+          ))}
+        </div>
+        <ul className="space-y-2">
+          {(historique ?? []).map((h) => (
+            <li key={h.id} className="rounded-lg border p-3">
+              <div className="mb-1 text-xs font-medium text-slate-400">
+                {new Date(h.date_soin).toLocaleDateString("fr-FR")}
+              </div>
+              <pre className="whitespace-pre-wrap text-sm text-slate-700">{h.texte}</pre>
+            </li>
+          ))}
+          {(!historique || historique.length === 0) && (
+            <li className="rounded-lg border border-dashed p-4 text-center text-sm text-slate-400">
+              Aucune transmission validée sur cette période.
+            </li>
+          )}
+        </ul>
+      </section>
     </div>
   );
 }

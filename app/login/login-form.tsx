@@ -23,7 +23,7 @@ export default function LoginForm() {
       setError(error.message);
       return;
     }
-    router.push("/patients");
+    router.push("/accueil");
     router.refresh();
   }
 
