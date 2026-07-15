@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import GenerateTransmission from "./generate-transmission";
+import PatientTournees from "./patient-tournees";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function PatientPage({
 
   const { data: patient } = await supabase
     .from("patients")
-    .select("id, nom, prenom, date_naissance")
+    .select("id, nom, prenom, date_naissance, cabinet_id")
     .eq("id", params.id)
     .single();
   if (!patient) notFound();
@@ -60,8 +61,20 @@ export default async function PatientPage({
   // Tournées auxquelles appartient le patient
   const { data: tournees } = await supabase
     .from("tournee_patients")
-    .select("moment, tournees(nom)")
+    .select("tournee_id, moment, tournees(nom)")
     .eq("patient_id", params.id);
+
+  // Toutes les tournées du cabinet (pour le gestionnaire)
+  const { data: allTournees } = await supabase
+    .from("tournees")
+    .select("id, nom")
+    .order("nom");
+
+  const memberships = (tournees ?? []).map((t) => ({
+    tournee_id: t.tournee_id as string,
+    moment: t.moment as string,
+    nom: firstOrSelf<{ nom: string }>(t.tournees)?.nom ?? "Tournée",
+  }));
 
   // Historique des transmissions validées, filtrable par période
   const active = PERIODS.find((p) => p.key === searchParams.tp) ?? PERIODS[0];
@@ -92,19 +105,16 @@ export default async function PatientPage({
             {patient.nom.toUpperCase()} {patient.prenom}
           </h1>
           <p className="text-xs text-slate-500">Né(e) le {patient.date_naissance ?? "—"}</p>
-          {(tournees ?? []).length > 0 && (
+          {memberships.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {(tournees ?? []).map((t, i) => {
-                const nom = firstOrSelf<{ nom: string }>(t.tournees)?.nom ?? "Tournée";
-                return (
-                  <span
-                    key={i}
-                    className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-brand-dark ring-1 ring-brand/30"
-                  >
-                    {nom} · {MOMENT_LABEL[t.moment as string] ?? t.moment}
-                  </span>
-                );
-              })}
+              {memberships.map((m) => (
+                <span
+                  key={m.tournee_id}
+                  className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-brand-dark ring-1 ring-brand/30"
+                >
+                  {m.nom} · {MOMENT_LABEL[m.moment] ?? m.moment}
+                </span>
+              ))}
             </div>
           )}
         </div>
@@ -116,6 +126,13 @@ export default async function PatientPage({
       >
         ✍️ Nouvelle dictée
       </Link>
+
+      <PatientTournees
+        patientId={patient.id}
+        cabinetId={patient.cabinet_id as string}
+        memberships={memberships}
+        allTournees={(allTournees ?? []).map((t) => ({ id: t.id as string, nom: t.nom as string }))}
+      />
 
       <section>
         <h2 className="mb-2 text-sm font-semibold text-slate-600">
