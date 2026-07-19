@@ -40,9 +40,14 @@ export default async function AccueilPage() {
     <div className="space-y-6">
       {/* Cabinet */}
       <section className="rounded-xl border border-brand bg-teal-50 p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-dark">
-          Cabinet infirmier
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-dark">
+            Cabinet infirmier
+          </p>
+          <Link href="/parametres" className="text-xs font-medium text-brand-dark hover:underline">
+            ⚙️ Paramètres
+          </Link>
+        </div>
         <h1 className="text-2xl font-bold leading-tight text-slate-900">{cabinetNom}</h1>
         <p className="mt-1 text-sm text-slate-600">
           {praticiens?.length ?? 0} praticien{(praticiens?.length ?? 0) > 1 ? "s" : ""}
