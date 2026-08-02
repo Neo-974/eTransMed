@@ -13,7 +13,6 @@ export default function RegisterForm() {
   const [mode, setMode] = useState<Mode>("create");
   const [cabinet, setCabinet] = useState("");
   const [code, setCode] = useState("");
-  const [role, setRole] = useState("collaborateur");
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,7 +58,8 @@ export default function RegisterForm() {
         : await supabase.rpc("join_cabinet_with_code", {
             p_code: code,
             membre_nom: nom,
-            p_role: role,
+            // Rôle de base ; l'admin/titulaire le définira ensuite dans Praticiens.
+            p_role: "collaborateur",
           });
 
     setLoading(false);
@@ -108,11 +108,9 @@ export default function RegisterForm() {
             <input required placeholder="Code du cabinet" value={code}
               onChange={(e) => setCode(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono uppercase tracking-widest" />
-            <select value={role} onChange={(e) => setRole(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-              <option value="collaborateur">Collaborateur</option>
-              <option value="remplacant">Remplaçant</option>
-            </select>
+            <p className="text-xs text-slate-500">
+              Votre rôle et vos droits seront définis par le titulaire ou l&apos;admin du cabinet.
+            </p>
           </>
         )}
         <input required placeholder="Votre nom" value={nom}
