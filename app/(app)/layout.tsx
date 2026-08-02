@@ -36,7 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </header>
 
       <div className="bg-amber-50 px-4 py-2 text-center text-xs text-amber-800">
-        Version test — données fictives uniquement (non-HDS)
+        Version test
       </div>
 
       <nav className="flex border-b text-sm">
