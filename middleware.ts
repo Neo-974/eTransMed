@@ -51,5 +51,5 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Exclut les assets statiques (fichiers avec extension : .png, .webmanifest,
   // sw.js, favicon…) et l'API de transcription, pour ne pas les rediriger vers /login.
-  matcher: ["/((?!_next/static|_next/image|api/transcribe|.*\\..*).*)"],
+  matcher: ["/((?!_next/static|_next/image|api|.*\\..*).*)"],
 };

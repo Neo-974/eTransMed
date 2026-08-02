@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import MembersManager from "../parametres/members-manager";
 import CopyCode from "./copy-code";
+import CreatePractitioner from "./create-practitioner";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,8 @@ export default async function PraticiensPage() {
     .select("cabinet_id, role")
     .eq("id", userData.user!.id)
     .single();
+
+  const isManager = ["titulaire", "admin"].includes(profile?.role as string);
 
   const { data: cabinet } = await supabase
     .from("cabinets")
@@ -31,22 +34,32 @@ export default async function PraticiensPage() {
     <div className="space-y-5">
       <h1 className="text-lg font-semibold">Praticiens</h1>
 
-      {/* Inscrire un praticien = partager le code d'invitation */}
-      <section className="rounded-lg border border-brand bg-teal-50 p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-dark">
-          Inscrire un praticien
-        </p>
-        <div className="mt-1 flex items-center gap-3">
-          <span className="font-mono text-2xl font-bold tracking-widest text-slate-900">{code}</span>
-          <CopyCode code={cabinet?.code_invitation ?? ""} />
+      {/* Inscrire un praticien */}
+      <section className="space-y-3 rounded-lg border border-brand bg-teal-50 p-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-dark">
+            Inscrire un praticien
+          </p>
+          <div className="mt-1 flex items-center gap-3">
+            <span className="font-mono text-2xl font-bold tracking-widest text-slate-900">{code}</span>
+            <CopyCode code={cabinet?.code_invitation ?? ""} />
+          </div>
+          <p className="mt-1 text-xs text-slate-600">
+            Partagez ce code : le praticien s&apos;inscrit via « Rejoindre un cabinet ».
+          </p>
         </div>
-        <p className="mt-2 text-xs text-slate-600">
-          Partagez ce code : le praticien s&apos;inscrit via « Rejoindre un cabinet » en le
-          saisissant, puis choisit son rôle (collaborateur / remplaçant).
-        </p>
+
+        {isManager && (
+          <div className="border-t border-brand/20 pt-3">
+            <p className="mb-2 text-xs text-slate-600">
+              Ou créez-le directement, avec son mot de passe :
+            </p>
+            <CreatePractitioner />
+          </div>
+        )}
       </section>
 
-      {/* Liste + modification / retrait */}
+      {/* Liste + gestion */}
       <section>
         <h2 className="mb-2 text-sm font-semibold text-slate-600">
           Membres du cabinet ({membres?.length ?? 0})
@@ -58,7 +71,7 @@ export default async function PraticiensPage() {
             role: m.role as string,
           }))}
           currentUserId={userData.user!.id}
-          isTitulaire={profile?.role === "titulaire"}
+          isManager={isManager}
         />
       </section>
     </div>
