@@ -39,8 +39,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         Version test
       </div>
 
-      <nav className="flex border-b text-sm">
+      <nav className="flex border-b text-xs">
         <Link href="/accueil" className="flex-1 py-2 text-center hover:bg-slate-50">Accueil</Link>
+        <Link href="/praticiens" className="flex-1 py-2 text-center hover:bg-slate-50">Praticiens</Link>
         <Link href="/patients" className="flex-1 py-2 text-center hover:bg-slate-50">Patients</Link>
         <Link href="/transmissions" className="flex-1 py-2 text-center hover:bg-slate-50">Transmissions</Link>
       </nav>

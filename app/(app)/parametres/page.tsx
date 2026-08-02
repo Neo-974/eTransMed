@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ParametresForm from "./parametres-form";
-import MembersManager from "./members-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +10,7 @@ export default async function ParametresPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("cabinet_id, role")
+    .select("cabinet_id")
     .eq("id", userData.user!.id)
     .single();
 
@@ -20,11 +19,6 @@ export default async function ParametresPage() {
     .select("id, nom, description, code_invitation")
     .eq("id", profile!.cabinet_id)
     .single();
-
-  const { data: membres } = await supabase
-    .from("profiles")
-    .select("id, nom_complet, role")
-    .order("nom_complet");
 
   return (
     <div className="space-y-5">
@@ -40,20 +34,9 @@ export default async function ParametresPage() {
         codeInvitation={cabinet?.code_invitation ?? "—"}
       />
 
-      <section>
-        <h2 className="mb-2 text-sm font-semibold text-slate-600">
-          Praticiens du cabinet ({membres?.length ?? 0})
-        </h2>
-        <MembersManager
-          members={(membres ?? []).map((m) => ({
-            id: m.id as string,
-            nom_complet: m.nom_complet,
-            role: m.role as string,
-          }))}
-          currentUserId={userData.user!.id}
-          isTitulaire={profile?.role === "titulaire"}
-        />
-      </section>
+      <p className="text-xs text-slate-400">
+        La gestion des praticiens (rôles, retrait) se fait dans l&apos;onglet « Praticiens ».
+      </p>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import GenerateTransmission from "./generate-transmission";
 import PatientTournees from "./patient-tournees";
+import PatientEdit from "./patient-edit";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +120,13 @@ export default async function PatientPage({
           )}
         </div>
       </div>
+
+      <PatientEdit
+        patientId={patient.id}
+        nom={patient.nom}
+        prenom={patient.prenom}
+        dateNaissance={patient.date_naissance}
+      />
 
       <Link
         href={`/patients/${patient.id}/record`}
