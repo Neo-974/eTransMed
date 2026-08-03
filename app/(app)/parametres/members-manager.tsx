@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -28,6 +28,17 @@ export default function MembersManager({
   const [names, setNames] = useState<Record<string, string>>(
     Object.fromEntries(members.map((m) => [m.id, m.nom_complet ?? ""]))
   );
+
+  // Intègre les nouveaux membres (ex. après création) sans écraser une saisie en cours.
+  useEffect(() => {
+    setNames((prev) => {
+      const next = { ...prev };
+      for (const m of members) {
+        if (!(m.id in next)) next[m.id] = m.nom_complet ?? "";
+      }
+      return next;
+    });
+  }, [members]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pwFor, setPwFor] = useState<string | null>(null);
