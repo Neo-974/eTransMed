@@ -360,12 +360,14 @@ begin
   v_role := case when p_role in ('collaborateur', 'remplacant')
                  then p_role::public.user_role else 'collaborateur' end;
 
+  -- On NE modifie PAS le rôle d'un membre existant (évite de rétrograder un
+  -- titulaire/admin qui rejoindrait avec le code). Le rôle n'est posé qu'à la
+  -- première création du profil ; ensuite il est géré par le titulaire/admin.
   insert into public.profiles (id, cabinet_id, nom_complet, role)
   values (auth.uid(), v_cab, membre_nom, v_role)
   on conflict (id) do update
     set cabinet_id = excluded.cabinet_id,
-        nom_complet = excluded.nom_complet,
-        role = excluded.role;
+        nom_complet = excluded.nom_complet;
 
   return v_cab;
 end;
