@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { emailFromLogin } from "@/lib/login-id";
 
 type Mode = "create" | "join";
 
@@ -14,7 +15,6 @@ export default function RegisterForm() {
   const [cabinet, setCabinet] = useState("");
   const [code, setCode] = useState("");
   const [nom, setNom] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,9 +24,11 @@ export default function RegisterForm() {
     setError(null);
     setLoading(true);
 
+    const email = emailFromLogin(nom);
     let { data: auth, error: signErr } = await supabase.auth.signUp({ email, password });
 
-    // Compte déjà créé lors d'une tentative précédente : on se connecte.
+    // Identifiant déjà pris : on tente la connexion (récupération d'un compte
+    // créé lors d'une tentative précédente).
     if (signErr) {
       const { data: signIn, error: inErr } = await supabase.auth.signInWithPassword({
         email,
@@ -34,7 +36,9 @@ export default function RegisterForm() {
       });
       if (inErr) {
         setLoading(false);
-        setError(inErr.message);
+        setError(
+          "Cet identifiant est déjà utilisé (ou le mot de passe ne correspond pas). Choisissez un autre nom."
+        );
         return;
       }
       auth = signIn;
@@ -43,12 +47,11 @@ export default function RegisterForm() {
     if (!auth.session) {
       setLoading(false);
       setError(
-        "Confirmation email requise. Pour la version test, désactivez « Confirm email » dans Supabase (Authentication → Providers → Email)."
+        "Confirmation requise. Pour la version test, désactivez « Confirm email » dans Supabase (Authentication → Providers → Email)."
       );
       return;
     }
 
-    // Fonctions SECURITY DEFINER : évitent le blocage RLS à l'inscription.
     const { error: rpcErr } =
       mode === "create"
         ? await supabase.rpc("create_cabinet_and_join", {
@@ -58,7 +61,6 @@ export default function RegisterForm() {
         : await supabase.rpc("join_cabinet_with_code", {
             p_code: code,
             membre_nom: nom,
-            // Rôle de base ; l'admin/titulaire le définira ensuite dans Praticiens.
             p_role: "collaborateur",
           });
 
@@ -75,7 +77,7 @@ export default function RegisterForm() {
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
       <h1 className="mb-1 text-2xl font-bold text-brand-dark">eTransMed</h1>
-      <p className="mb-4 text-sm text-slate-500">Inscription (version test)</p>
+      <p className="mb-4 text-sm text-slate-500">Créer ou rejoindre un cabinet</p>
 
       <div className="mb-4 flex rounded-lg border p-1 text-sm">
         <button
@@ -113,23 +115,24 @@ export default function RegisterForm() {
             </p>
           </>
         )}
-        <input required placeholder="Votre nom" value={nom}
-          onChange={(e) => setNom(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2" />
-        <input type="email" required placeholder="Email" value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2" />
-        <input type="password" required placeholder="Mot de passe (min. 6)" value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-600">
+            Votre nom (identifiant de connexion)
+          </label>
+          <input required placeholder="Ex. Marie Dupont" value={nom}
+            onChange={(e) => setNom(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-600">Mot de passe</label>
+          <input type="password" required placeholder="Au moins 6 caractères" value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+        </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button type="submit" disabled={loading}
           className="w-full rounded-lg bg-brand py-2 font-medium text-white disabled:opacity-50">
-          {loading
-            ? "…"
-            : mode === "create"
-            ? "Créer le cabinet"
-            : "Rejoindre le cabinet"}
+          {loading ? "…" : mode === "create" ? "Créer le cabinet" : "Rejoindre le cabinet"}
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-500">

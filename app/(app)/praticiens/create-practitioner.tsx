@@ -13,7 +13,6 @@ const ROLES = [
 export default function CreatePractitioner() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
   const [nom, setNom] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("collaborateur");
@@ -29,7 +28,7 @@ export default function CreatePractitioner() {
     const res = await fetch("/api/admin/create-practitioner", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, nom, password, role }),
+      body: JSON.stringify({ nom, password, role }),
     });
     const j = await res.json().catch(() => ({}));
     setBusy(false);
@@ -37,7 +36,6 @@ export default function CreatePractitioner() {
       setError(j.error ?? "Erreur.");
       return;
     }
-    setEmail("");
     setNom("");
     setPassword("");
     setOk(true);
@@ -61,11 +59,8 @@ export default function CreatePractitioner() {
 
   return (
     <form onSubmit={submit} className="space-y-2 rounded-lg border bg-slate-50 p-3">
-      <input required placeholder="Nom du praticien" value={nom}
+      <input required placeholder="Nom du praticien (identifiant de connexion)" value={nom}
         onChange={(e) => setNom(e.target.value)}
-        className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" />
-      <input required type="email" placeholder="Email" value={email}
-        onChange={(e) => setEmail(e.target.value)}
         className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" />
       <input required type="text" placeholder="Mot de passe (≥ 6)" value={password}
         onChange={(e) => setPassword(e.target.value)}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, adminConfigured } from "@/lib/supabase/admin";
+import { emailFromLogin } from "@/lib/login-id";
 
 export const runtime = "nodejs";
 
@@ -32,16 +33,18 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => null);
-  const email = String(body?.email ?? "").trim();
   const password = String(body?.password ?? "");
   const nom = String(body?.nom ?? "").trim();
   const role = ROLES.includes(body?.role) ? body.role : "collaborateur";
-  if (!email || !nom || password.length < 6) {
+  if (!nom || password.length < 6) {
     return NextResponse.json(
-      { error: "Email, nom et mot de passe (≥ 6 caractères) requis." },
+      { error: "Nom et mot de passe (≥ 6 caractères) requis." },
       { status: 400 }
     );
   }
+
+  // Email interne dérivé du nom (l'utilisateur se connecte avec nom + mot de passe).
+  const email = emailFromLogin(nom);
 
   const admin = createAdminClient();
   const { data: created, error: cErr } = await admin.auth.admin.createUser({
@@ -50,7 +53,10 @@ export async function POST(req: Request) {
     email_confirm: true,
   });
   if (cErr || !created.user) {
-    return NextResponse.json({ error: cErr?.message ?? "Création du compte impossible." }, { status: 400 });
+    const msg = /already|exists|registered|duplicate/i.test(cErr?.message ?? "")
+      ? "Ce nom est déjà utilisé comme identifiant. Choisissez un nom légèrement différent."
+      : cErr?.message ?? "Création du compte impossible.";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 
   const { error: pErr } = await admin.from("profiles").insert({
