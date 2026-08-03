@@ -12,15 +12,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("nom_complet, cabinet_id, actif, cabinets(nom)")
+    .select("nom_complet, cabinet_id, cabinets(nom)")
     .eq("id", user.id)
     .single();
 
   // Profil sans cabinet : compte incomplet, on renvoie vers l'inscription.
   if (!profile?.cabinet_id) redirect("/register");
 
+  // Vérif "retiré" tolérante : si la colonne actif n'existe pas encore, on
+  // considère l'utilisateur comme actif (ne bloque pas l'accès).
+  const { data: actifRow } = await supabase
+    .from("profiles")
+    .select("actif")
+    .eq("id", user.id)
+    .single();
+
   // Praticien retiré : accès suspendu.
-  if (profile.actif === false) {
+  if (actifRow && (actifRow as { actif?: boolean }).actif === false) {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-3 bg-white px-8 text-center">
         <p className="text-lg font-semibold text-slate-900">Accès suspendu</p>

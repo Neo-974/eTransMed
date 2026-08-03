@@ -25,8 +25,14 @@ export default async function PraticiensPage() {
 
   const { data: membres } = await supabase
     .from("profiles")
-    .select("id, nom_complet, role, actif")
+    .select("id, nom_complet, role")
     .order("nom_complet");
+
+  // "actif" tolérant : si la colonne n'existe pas encore, tout le monde est actif.
+  const { data: actifs } = await supabase.from("profiles").select("id, actif");
+  const actifMap = new Map(
+    (actifs ?? []).map((a) => [a.id as string, (a as { actif?: boolean }).actif !== false])
+  );
 
   const code = cabinet?.code_invitation ?? "—";
 
@@ -69,7 +75,7 @@ export default async function PraticiensPage() {
             id: m.id as string,
             nom_complet: m.nom_complet,
             role: m.role as string,
-            actif: (m.actif ?? true) as boolean,
+            actif: actifMap.get(m.id as string) ?? true,
           }))}
           currentUserId={userData.user!.id}
           isManager={isManager}
