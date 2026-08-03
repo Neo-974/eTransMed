@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ParametresForm from "./parametres-form";
+import ChangePassword from "./change-password";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,12 @@ export default async function ParametresPage() {
       <p className="text-xs text-slate-400">
         La gestion des praticiens (rôles, retrait) se fait dans l&apos;onglet « Praticiens ».
       </p>
+
+      <section className="space-y-2 border-t pt-4">
+        <h2 className="text-sm font-semibold text-slate-600">Mon compte</h2>
+        <p className="text-xs text-slate-500">Changez votre mot de passe personnel.</p>
+        <ChangePassword />
+      </section>
     </div>
   );
 }
