@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AddPatientForm from "./add-patient-form";
+import PatientsList from "./patients-list";
 
 export const dynamic = "force-dynamic";
 
@@ -21,28 +21,14 @@ export default async function PatientsPage() {
 
       <AddPatientForm />
 
-      <ul className="divide-y rounded-lg border">
-        {(patients ?? []).map((p) => (
-          <li key={p.id}>
-            <Link
-              href={`/patients/${p.id}`}
-              className="flex items-center justify-between px-4 py-3 hover:bg-slate-50"
-            >
-              <span>
-                <span className="font-medium">{p.nom.toUpperCase()}</span> {p.prenom}
-              </span>
-              <span className="text-xs text-slate-400">
-                {p.date_naissance ?? "—"}
-              </span>
-            </Link>
-          </li>
-        ))}
-        {(!patients || patients.length === 0) && (
-          <li className="px-4 py-6 text-center text-sm text-slate-400">
-            Aucun patient. Ajoutez-en un ci-dessus.
-          </li>
-        )}
-      </ul>
+      <PatientsList
+        patients={(patients ?? []).map((p) => ({
+          id: p.id as string,
+          nom: p.nom as string,
+          prenom: p.prenom as string,
+          date_naissance: (p.date_naissance as string | null) ?? null,
+        }))}
+      />
     </div>
   );
 }
