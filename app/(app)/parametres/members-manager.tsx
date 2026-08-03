@@ -44,6 +44,8 @@ export default function MembersManager({
   const [pwFor, setPwFor] = useState<string | null>(null);
   const [pwValue, setPwValue] = useState("");
   const [pwMsg, setPwMsg] = useState<string | null>(null);
+  const [delFor, setDelFor] = useState<string | null>(null);
+  const [delText, setDelText] = useState("");
 
   async function saveName(id: string) {
     setBusy(id);
@@ -90,6 +92,25 @@ export default function MembersManager({
     setPwFor(null);
     setPwValue("");
     setPwMsg("Mot de passe mis à jour ✓");
+  }
+
+  async function deletePractitioner(id: string) {
+    setBusy(id);
+    setError(null);
+    const res = await fetch("/api/admin/delete-practitioner", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetId: id }),
+    });
+    const j = await res.json().catch(() => ({}));
+    setBusy(null);
+    if (!res.ok) {
+      setError(j.error ?? "Suppression impossible.");
+      return;
+    }
+    setDelFor(null);
+    setDelText("");
+    router.refresh();
   }
 
   return (
@@ -159,13 +180,26 @@ export default function MembersManager({
                 )}
 
                 {canManageOther && (
-                  <button
-                    onClick={() => remove(m.id, m.nom_complet ?? "")}
-                    disabled={busy === m.id}
-                    className="ml-auto rounded border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
-                  >
-                    Retirer
-                  </button>
+                  <div className="ml-auto flex gap-2">
+                    <button
+                      onClick={() => remove(m.id, m.nom_complet ?? "")}
+                      disabled={busy === m.id}
+                      className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Retirer
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDelFor(delFor === m.id ? null : m.id);
+                        setDelText("");
+                        setError(null);
+                      }}
+                      disabled={busy === m.id}
+                      className="rounded border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -185,6 +219,30 @@ export default function MembersManager({
                   >
                     Définir
                   </button>
+                </div>
+              )}
+
+              {delFor === m.id && (
+                <div className="space-y-2 rounded-lg border border-red-300 bg-red-50 p-2">
+                  <p className="text-xs text-red-700">
+                    Supprimer <b>définitivement</b> le compte de{" "}
+                    <b>{m.nom_complet || "ce praticien"}</b> ? Tapez <b>SUPPRIMER</b> pour confirmer.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      value={delText}
+                      onChange={(e) => setDelText(e.target.value)}
+                      placeholder="Tapez SUPPRIMER"
+                      className="min-w-0 flex-1 rounded border border-red-300 px-2 py-1 text-sm"
+                    />
+                    <button
+                      onClick={() => deletePractitioner(m.id)}
+                      disabled={busy === m.id || delText.trim().toUpperCase() !== "SUPPRIMER"}
+                      className="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+                    >
+                      Confirmer
+                    </button>
+                  </div>
                 </div>
               )}
             </li>
