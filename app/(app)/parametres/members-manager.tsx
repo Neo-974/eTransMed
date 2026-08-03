@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Member = { id: string; nom_complet: string | null; role: string };
+type Member = { id: string; nom_complet: string | null; role: string; actif: boolean };
 
 const ROLES = [
   { key: "titulaire", label: "Titulaire" },
@@ -65,11 +65,10 @@ export default function MembersManager({
     else router.refresh();
   }
 
-  async function remove(id: string, nom: string) {
-    if (!confirm(`Retirer ${nom || "ce praticien"} du cabinet ?`)) return;
+  async function setActive(id: string, actif: boolean) {
     setBusy(id);
     setError(null);
-    const { error } = await supabase.from("profiles").update({ cabinet_id: null }).eq("id", id);
+    const { error } = await supabase.from("profiles").update({ actif }).eq("id", id);
     setBusy(null);
     if (error) setError(error.message);
     else router.refresh();
@@ -123,7 +122,10 @@ export default function MembersManager({
           const canManageOther = isManager && !isSelf;
           const canRename = isSelf || isManager;
           return (
-            <li key={m.id} className="space-y-2 px-4 py-3 text-sm">
+            <li
+              key={m.id}
+              className={`space-y-2 px-4 py-3 text-sm ${m.actif ? "" : "bg-slate-50 opacity-70"}`}
+            >
               <div className="flex items-center gap-2">
                 {canRename ? (
                   <>
@@ -144,6 +146,11 @@ export default function MembersManager({
                   <span className="flex-1 font-medium">{m.nom_complet ?? "—"}</span>
                 )}
                 {isSelf && <span className="text-[11px] text-slate-400">(vous)</span>}
+                {!m.actif && (
+                  <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                    Retiré
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -182,11 +189,15 @@ export default function MembersManager({
                 {canManageOther && (
                   <div className="ml-auto flex gap-2">
                     <button
-                      onClick={() => remove(m.id, m.nom_complet ?? "")}
+                      onClick={() => setActive(m.id, !m.actif)}
                       disabled={busy === m.id}
-                      className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                      className={
+                        m.actif
+                          ? "rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                          : "rounded border border-brand px-2 py-1 text-xs font-medium text-brand hover:bg-teal-50 disabled:opacity-50"
+                      }
                     >
-                      Retirer
+                      {m.actif ? "Retirer" : "Ajouter"}
                     </button>
                     <button
                       onClick={() => {

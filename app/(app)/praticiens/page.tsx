@@ -25,7 +25,7 @@ export default async function PraticiensPage() {
 
   const { data: membres } = await supabase
     .from("profiles")
-    .select("id, nom_complet, role")
+    .select("id, nom_complet, role, actif")
     .order("nom_complet");
 
   const code = cabinet?.code_invitation ?? "—";
@@ -69,6 +69,7 @@ export default async function PraticiensPage() {
             id: m.id as string,
             nom_complet: m.nom_complet,
             role: m.role as string,
+            actif: (m.actif ?? true) as boolean,
           }))}
           currentUserId={userData.user!.id}
           isManager={isManager}

@@ -28,6 +28,7 @@ create table if not exists public.profiles (
   cabinet_id  uuid references public.cabinets(id) on delete set null,
   nom_complet text,
   role        public.user_role not null default 'titulaire',
+  actif       boolean not null default true,
   created_at  timestamptz not null default now()
 );
 
@@ -35,7 +36,7 @@ create table if not exists public.profiles (
 create or replace function public.current_cabinet_id()
 returns uuid
 language sql stable security definer set search_path = public
-as $$ select cabinet_id from public.profiles where id = auth.uid() $$;
+as $$ select cabinet_id from public.profiles where id = auth.uid() and actif $$;
 
 -- Inscription : crée le cabinet + le profil du titulaire en une transaction.
 -- SECURITY DEFINER = contourne la RLS (le profil n'existe pas encore à cet instant).

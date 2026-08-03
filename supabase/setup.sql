@@ -33,6 +33,7 @@ create table if not exists public.profiles (
   cabinet_id  uuid references public.cabinets(id) on delete set null,
   nom_complet text,
   role        public.user_role not null default 'titulaire',
+  actif       boolean not null default true,
   created_at  timestamptz not null default now()
 );
 
@@ -40,7 +41,7 @@ create table if not exists public.profiles (
 create or replace function public.current_cabinet_id()
 returns uuid
 language sql stable security definer set search_path = public
-as $$ select cabinet_id from public.profiles where id = auth.uid() $$;
+as $$ select cabinet_id from public.profiles where id = auth.uid() and actif $$;
 
 -- Inscription : crée le cabinet + le profil du titulaire en une transaction.
 -- SECURITY DEFINER = contourne la RLS (le profil n'existe pas encore à cet instant).
@@ -423,3 +424,18 @@ create policy "profiles_manager_update" on public.profiles
   for update
   using (cabinet_id = public.current_cabinet_id() and public.is_manager())
   with check (cabinet_id = public.current_cabinet_id() or cabinet_id is null);
+
+-- ==== PARTIE 6 — MEMBRE ACTIF / RETIRÉ ====
+
+-- eTransMed — Membre actif / retiré (soft)
+-- « Retirer » garde le praticien dans la liste (marqué Retiré) mais lui coupe
+-- l'accès aux données du cabinet. « Ajouter » le réactive. À exécuter une fois.
+
+alter table public.profiles add column if not exists actif boolean not null default true;
+
+-- Le cabinet courant n'est renvoyé que pour un membre ACTIF -> un retiré perd
+-- l'accès aux patients / tournées / transmissions.
+create or replace function public.current_cabinet_id()
+returns uuid
+language sql stable security definer set search_path = public
+as $$ select cabinet_id from public.profiles where id = auth.uid() and actif $$;

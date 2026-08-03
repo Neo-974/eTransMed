@@ -12,12 +12,26 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("nom_complet, cabinet_id, cabinets(nom)")
+    .select("nom_complet, cabinet_id, actif, cabinets(nom)")
     .eq("id", user.id)
     .single();
 
   // Profil sans cabinet : compte incomplet, on renvoie vers l'inscription.
   if (!profile?.cabinet_id) redirect("/register");
+
+  // Praticien retiré : accès suspendu.
+  if (profile.actif === false) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-3 bg-white px-8 text-center">
+        <p className="text-lg font-semibold text-slate-900">Accès suspendu</p>
+        <p className="text-sm text-slate-500">
+          Votre accès à ce cabinet a été retiré. Contactez le titulaire du cabinet pour être
+          réintégré.
+        </p>
+        <SignOutButton />
+      </div>
+    );
+  }
 
   const cab = Array.isArray(profile.cabinets) ? profile.cabinets[0] : profile.cabinets;
   const cabinetNom = (cab as { nom: string } | null)?.nom ?? "Cabinet";
