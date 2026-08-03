@@ -20,10 +20,12 @@ export default function AddPatientForm() {
     setError(null);
     setSaving(true);
 
+    const { data: userData } = await supabase.auth.getUser();
     const { data: profile } = await supabase
       .from("profiles")
       .select("cabinet_id")
-      .single();
+      .eq("id", userData.user?.id ?? "")
+      .maybeSingle();
     if (!profile?.cabinet_id) {
       setSaving(false);
       setError("Cabinet introuvable.");

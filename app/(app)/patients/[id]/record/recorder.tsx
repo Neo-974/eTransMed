@@ -37,8 +37,12 @@ export default function Recorder({
     setSaving(true);
     setError(null);
 
-    const { data: profile } = await supabase.from("profiles").select("cabinet_id").single();
     const { data: userData } = await supabase.auth.getUser();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("cabinet_id")
+      .eq("id", userData.user?.id ?? "")
+      .maybeSingle();
     if (!profile?.cabinet_id || !userData.user) {
       setSaving(false);
       setError("Session invalide.");

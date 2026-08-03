@@ -38,7 +38,12 @@ export default function GenerateTransmission({
     setBusy(true);
     setError(null);
 
-    const { data: profile } = await supabase.from("profiles").select("cabinet_id").single();
+    const { data: userData } = await supabase.auth.getUser();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("cabinet_id")
+      .eq("id", userData.user?.id ?? "")
+      .maybeSingle();
     const { data: passages } = await supabase
       .from("passages")
       .select("recorded_at, transcript_corrige")
